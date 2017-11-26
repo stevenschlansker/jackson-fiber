@@ -28,13 +28,14 @@ public class JacksonFiberTest {
     private static final int SCATTER_SIZE = 32;
     private static final int MAX_DEPTH = 10000;
 
+    private final Random r = new Random();
+
     @Test
     public void deserTest() throws Exception {
         final Executor executor = Executors.newSingleThreadExecutor();
         final FiberExecutorScheduler scheduler = new FiberExecutorScheduler("executor", executor);
 
         final int nFibers = 1000;
-        final Random r = new Random();
         final ObjectMapper mapper = new ObjectMapper();
 
         final ObjectNode[] testVector = new ObjectNode[nFibers];
@@ -78,7 +79,6 @@ public class JacksonFiberTest {
                     final Iterator<ByteBuffer> iter = bufIters.get(f);
                     if (iter.hasNext()) {
                         remaining = true;
-                        LOG.info("recv #{}", f);
                         stream[f].offer(iter.next(), () -> {});
                         Strand.yield();
                     }
@@ -104,7 +104,7 @@ public class JacksonFiberTest {
 
         @Override
         public ByteBuffer next() {
-            final int len = Math.min(payload.length - off, SCATTER_SIZE);
+            final int len = Math.min(payload.length - off, r.nextInt(SCATTER_SIZE-1)+1);
             final ByteBuffer next = ByteBuffer.allocate(len);
             next.put(payload, off, len);
             next.position(0);

@@ -31,7 +31,7 @@ class AsyncFiberStream extends InputStream {
             callback.run();
             return;
         }
-        LOG.debug("offer #{} {}", idx, content.remaining());
+        LOG.debug("send #{} {}", idx, content.remaining());
         try {
             channel.send(new Chunk(content, callback));
         } catch (InterruptedException e) {
@@ -60,7 +60,7 @@ class AsyncFiberStream extends InputStream {
     private int read0(ToIntFunction<Chunk> reader) throws IOException {
         try {
             if (readTop == null) {
-                LOG.info("do read #{}", idx);
+                LOG.debug("do receive #{}", idx);
                 readTop = channel.receive();
             }
             if (readTop == null) {
@@ -69,7 +69,7 @@ class AsyncFiberStream extends InputStream {
             }
 
             final int result = reader.applyAsInt(readTop);
-            LOG.info("read0 #{} = {}", idx, result);
+            LOG.debug("read0 #{} = {}", idx, result);
             if (!readTop.buf.hasRemaining()) {
                 LOG.debug("callback {} run", readTop.callback);
                 readTop.callback.run();
