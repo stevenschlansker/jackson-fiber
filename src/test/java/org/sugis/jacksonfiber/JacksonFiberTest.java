@@ -103,24 +103,23 @@ public class JacksonFiberTest {
     }
 
     class BufIterator implements Iterator<ByteBuffer> {
-        private final byte[] payload;
+        private final ByteBuffer payload;
         private int off = 0;
         BufIterator(byte[] payload) {
-            this.payload = payload;
+            this.payload = ByteBuffer.wrap(payload);
         }
         @Override
         public boolean hasNext() {
-            return off < payload.length;
+            return off < payload.capacity();
         }
 
         @Override
         public ByteBuffer next() {
-            final int len = Math.min(payload.length - off, r.nextInt(SCATTER_SIZE-1)+1);
-            final ByteBuffer next = ByteBuffer.allocate(len);
-            next.put(payload, off, len);
-            next.position(0);
+            final int len = Math.min(payload.capacity() - off, r.nextInt(SCATTER_SIZE-1)+1);
+            payload.position(off);
+            payload.limit(off + len);
             off += len;
-            return next;
+            return payload.slice();
         }
     }
 }
