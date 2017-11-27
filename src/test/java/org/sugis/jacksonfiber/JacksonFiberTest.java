@@ -10,6 +10,7 @@ import java.util.Random;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,14 +56,19 @@ public class JacksonFiberTest {
         final AsyncFiberStream[] stream = new AsyncFiberStream[nFibers];
         final List<Iterator<ByteBuffer>> bufIters = new ArrayList<>();
         final List<Fiber<JsonNode>> fibers = new ArrayList<>();
+        final AtomicInteger fRemaining = new AtomicInteger(nFibers);
 
+        final long fiberStart = System.currentTimeMillis();
         LOG.info("fibers start");
         for (int f = 0; f < nFibers; f++) {
             final InputStream s = stream[f] = new AsyncFiberStream(f);
 
+            final int f0 = f;
             fibers.add(new Fiber<JsonNode>(scheduler, () -> {
                 try {
-                    return mapper.readTree(s);
+                    final JsonNode result = mapper.readTree(s);
+                    LOG.info("fiber #{} done in {} ({} remain)", f0, since(fiberStart), fRemaining.decrementAndGet());
+                    return result;
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -87,8 +93,13 @@ public class JacksonFiberTest {
         }).start().join();
 
         for (int f = 0; f < nFibers; f++) {
-            LOG.info("#{} {}", f, fibers.get(f).get(30, TimeUnit.SECONDS));
+            LOG.debug("#{} {}", f, fibers.get(f).get(30, TimeUnit.SECONDS));
         }
+        LOG.info("test succeeds in {}", since(fiberStart));
+    }
+
+    private String since(long when) {
+        return String.format("%.2fs", (System.currentTimeMillis() - when) / 1000.0);
     }
 
     class BufIterator implements Iterator<ByteBuffer> {
