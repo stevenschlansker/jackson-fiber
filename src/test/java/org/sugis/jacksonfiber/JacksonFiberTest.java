@@ -27,7 +27,7 @@ import co.paralleluniverse.strands.Strand;
 public class JacksonFiberTest {
     private static final Logger LOG = LoggerFactory.getLogger(JacksonFiberTest.class);
     private static final int SCATTER_SIZE = 32;
-    private static final int MAX_DEPTH = 10000;
+    private static final int MAX_DEPTH = 100000;
 
     private final Random r = new Random();
 
@@ -36,7 +36,7 @@ public class JacksonFiberTest {
         final Executor executor = Executors.newSingleThreadExecutor();
         final FiberExecutorScheduler scheduler = new FiberExecutorScheduler("executor", executor);
 
-        final int nFibers = 1000;
+        final int nFibers = 10000;
         final ObjectMapper mapper = new ObjectMapper();
 
         final ObjectNode[] testVector = new ObjectNode[nFibers];
